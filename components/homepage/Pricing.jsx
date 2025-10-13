@@ -50,7 +50,6 @@ const XIcon = () => (
 
 
 export default function Pricing() {
-  const router = useRouter();
   const [isAnnual, setIsAnnual] = useState(false);
   return (
     <div>
