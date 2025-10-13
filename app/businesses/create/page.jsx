@@ -1,4 +1,4 @@
-import CreateBusiness from "@/components/businesses/create";
+import CreateBusiness from "@/components/businesses/Create";
 import BusinessHeader from "@/components/businesses/logo";
 
 export default function CreateBusinessPage() {
