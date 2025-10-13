@@ -1,4 +1,5 @@
 "use client";
+import { Suspense } from "react";
 import PostEditor from "@/components/Contentgenerate/Post";
 import BusinessHeader from "@/components/businesses/logo";
 import Toast from "@/components/Contentgenerate/Toast";
@@ -10,8 +11,10 @@ const MyPostView = () => {
     <>
       <BusinessHeader />
       <div className="pt-20" />
-      <PostEditor />
-      <Toast />
+      <Suspense fallback={<div className="p-4 text-center">Loading post...</div>}>
+        <PostEditor />
+        <Toast />
+      </Suspense>
     </>
   );
 };
