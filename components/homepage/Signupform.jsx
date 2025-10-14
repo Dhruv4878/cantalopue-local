@@ -34,7 +34,7 @@ export default function SignupPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     if (!token) return;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     fetch(`${apiUrl}/profile/me`, { headers: { Authorization: `Bearer ${token}` }})

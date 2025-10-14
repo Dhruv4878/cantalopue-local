@@ -134,13 +134,34 @@ export default function LoginForm() {
       if (data.token) {
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("flashMessage", "Signed in successfully");
+        // Ensure we persist email for initials fallback
+        try {
+          const normalizedEmail = (email || "").trim();
+          if (normalizedEmail) sessionStorage.setItem("userEmail", normalizedEmail);
+        } catch (_) {}
+        if (typeof data.hasProfile === "boolean") {
+          sessionStorage.setItem("hasProfile", data.hasProfile ? "true" : "false");
+        }
 
-        const profileRes = await fetch(`${apiUrl}/profile/me`, {
-          headers: { Authorization: `Bearer ${data.token}` },
-        });
-
-        if (profileRes.ok) router.push("/content/generate");
-        else router.push("/businesses/create");
+        if (data.hasProfile) {
+          const profileRes = await fetch(`${apiUrl}/profile/me`, {
+            headers: { Authorization: `Bearer ${data.token}` },
+          });
+          if (profileRes.ok) {
+          try {
+            const profile = await profileRes.json();
+            console.log("profile", profile);
+            const email = (profile?.user?.email || "").trim();
+            if (email) sessionStorage.setItem("userEmail", email);
+          } catch (_) {
+            // ignore parse errors
+          }
+          router.push("/content/generate");
+          return;
+          }
+        }
+        // No profile yet: send to onboarding
+        router.push("/businesses/create");
       }
     } catch (err) {
       setError(err.message);
@@ -158,6 +179,14 @@ export default function LoginForm() {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      // Persist basic identity for UI initials/email
+      try {
+        const displayName = (user?.displayName || "").trim();
+        // no first/last stored
+        if (user?.email) sessionStorage.setItem("userEmail", user.email);
+      } catch (_) {
+        // ignore
+      }
       const idToken = await user.getIdToken();
 
       const apiUrl =
@@ -177,13 +206,28 @@ export default function LoginForm() {
       if (data.token) {
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("flashMessage", "Signed in with Google");
+        if (typeof data.hasProfile === "boolean") {
+          sessionStorage.setItem("hasProfile", data.hasProfile ? "true" : "false");
+        }
 
-        const profileRes = await fetch(`${apiUrl}/profile/me`, {
-          headers: { Authorization: `Bearer ${data.token}` },
-        });
-
-        if (profileRes.ok) router.push("/content/generate");
-        else router.push("/businesses/create");
+        if (data.hasProfile) {
+          const profileRes = await fetch(`${apiUrl}/profile/me`, {
+            headers: { Authorization: `Bearer ${data.token}` },
+          });
+          if (profileRes.ok) {
+            try {
+              const profile = await profileRes.json();
+              const email = (profile?.user?.email || "").trim();
+              if (email) sessionStorage.setItem("userEmail", email);
+            } catch (_) {
+              // ignore parse errors
+            }
+            router.push("/content/generate");
+            return;
+          }
+        }
+        // No profile yet: send to onboarding
+        router.push("/businesses/create");
       }
     } catch (error) {
       setError(error.message || "Failed to sign in with Google. Please try again.");

@@ -13,7 +13,7 @@ export default function Hero() {
             Transform your business data into visual storytelling that engages audiences, saves time, and builds brand trust. AI-powered content generation for every social platform.
           </p>
           <div className="mt-12 flex flex-col sm:flex-row justify-center items-center gap-4">
-            <a href="#" className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 custom-shadow">
+            <a href="/login" className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 custom-shadow">
               Start Free Plan
             </a>
             <a href="#" className="flex items-center text-blue-600 font-semibold text-lg hover:text-blue-700 transition-colors">
