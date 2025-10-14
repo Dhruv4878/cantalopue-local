@@ -330,9 +330,13 @@
                 <Copy size={16} />
                 <span>Duplicate Post</span>
               </button>
-              <button className="w-full text-left flex items-center space-x-2 px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className={`w-full text-left flex items-center space-x-2 px-3 py-2 rounded-md ${isDeleting ? 'bg-red-100 text-red-300 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}
+              >
                 <Trash2 size={16} />
-                <span>Delete Post</span>
+                <span>{isDeleting ? 'Deleting...' : 'Delete Post'}</span>
               </button>
             </div>
           </div>
