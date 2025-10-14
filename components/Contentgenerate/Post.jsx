@@ -23,6 +23,8 @@
     const [editedText, setEditedText] = useState('');
     const [editedHashtags, setEditedHashtags] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false); // add this in post editor
+
 
     function handlerRegenerate() {
       router.push('/content/generate');
@@ -138,7 +140,44 @@
           setIsSaving(false);
       }
     };
+    const handleDelete = async () => {
+      if (!postId || isDeleting) return;
 
+    const confirmDelete = window.confirm('Are you sure you want to delete this post?');
+    if (!confirmDelete) return;
+
+    try {
+      setIsDeleting(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const token = typeof window !== 'undefined' ? sessionStorage.getItem('authToken') : null;
+      if (!token) {
+        setError('Your session has ended. Please log in again.');
+        router.push('/login');
+        return;
+      }
+
+      const res = await fetch(`${apiUrl}/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Failed to delete post');
+      }
+
+      // After successful delete, navigate back to generate or history
+      router.push('/content/generate');
+    } catch (e) {
+      console.error('Failed to delete post:', e);
+      setError(e.message || 'Failed to delete post');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
     // --- JSX REMAINS THE SAME ---
     // No changes needed for the returned JSX structure.
     // The logic inside is now powered by the corrected state management.
