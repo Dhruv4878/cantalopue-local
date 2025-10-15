@@ -504,12 +504,12 @@ const PostEditor = () => {
               )}
                 {imageUrl ? (
                   <img src={imageUrl} alt="Generated Post" className="max-w-full max-h-[480px] object-contain" />
-                ) : (
+                ) : (!imageGenerating ? (
                   <div className="w-full flex flex-col items-center justify-center">
                     <div className="text-gray-700 font-medium mb-4">Generating image…</div>
                     <div className="h-10 w-10 rounded-full border-4 border-gray-200 border-t-indigo-500 animate-spin" />
                   </div>
-                )}
+                ) : null)}
               </div>
             </div>
           </div>
