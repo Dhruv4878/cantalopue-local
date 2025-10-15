@@ -36,6 +36,7 @@ const PostEditor = () => {
   const [isAddPlatformsOpen, setIsAddPlatformsOpen] = useState(false);
   const [captionLoading, setCaptionLoading] = useState(false);
   const [hashtagsLoading, setHashtagsLoading] = useState(false);
+  const [addPlatformsSelection, setAddPlatformsSelection] = useState({});
 
 
   function handlerRegenerate() {
@@ -630,7 +631,13 @@ const PostEditor = () => {
                     const alreadySelected = platformNames.includes(p);
                     return (
                       <label key={p} className={`flex items-center gap-2 px-2 py-1 rounded cursor-pointer ${alreadySelected ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>
-                        <input type="checkbox" disabled={alreadySelected} className="h-4 w-4" />
+                        <input
+                          type="checkbox"
+                          disabled={alreadySelected}
+                          checked={!!addPlatformsSelection[p] && !alreadySelected}
+                          onChange={() => !alreadySelected && setAddPlatformsSelection(prev => ({ ...prev, [p]: !prev[p] }))}
+                          className="h-4 w-4"
+                        />
                         <span className="flex items-center gap-2 capitalize">{platformIcons[p]} {p}</span>
                       </label>
                     );
@@ -646,6 +653,31 @@ const PostEditor = () => {
                   </button>
                   <button
                     type="button"
+                    onClick={async () => {
+                      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+                      const token = typeof window !== 'undefined' ? sessionStorage.getItem('authToken') : null;
+                      const toAdd = Object.keys(addPlatformsSelection).filter(k => addPlatformsSelection[k] && !platformNames.includes(k));
+                      if (!token || !generatedData || toAdd.length === 0) { setIsAddPlatformsOpen(false); setAddPlatformsSelection({}); return; }
+                      try {
+                        const res = await fetch(`${apiUrl}/create-text-plan`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                          body: JSON.stringify({ brief: generatedData.postContent || '', platforms: toAdd })
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          const merged = { ...generatedData, platforms: { ...(generatedData.platforms || {}) } };
+                          Object.keys(data.platforms || {}).forEach(p => { merged.platforms[p] = data.platforms[p]; });
+                          setGeneratedData(merged);
+                          if (postId) {
+                            await fetch(`${apiUrl}/posts/${postId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ content: merged }) });
+                          }
+                          if (toAdd[0]) setActiveTab(toAdd[0]);
+                        }
+                      } catch (_) { /* ignore */ }
+                      setIsAddPlatformsOpen(false);
+                      setAddPlatformsSelection({});
+                    }}
                     className="px-3 py-1.5 text-sm rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
                   >
                     Add
