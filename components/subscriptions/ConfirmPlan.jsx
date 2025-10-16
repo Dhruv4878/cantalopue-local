@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import Link from "next/link";
 
@@ -17,7 +18,7 @@ const plans = [
 		button: "Continue with Free",
 		highlight: false,
 		color: "border-gray-200",
-		href: "/content/generate",
+		href: "/content/dashboard",
 	},
 	{
 		name: "Starter",

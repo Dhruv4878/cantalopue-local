@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
 import { Instagram, Facebook, Linkedin, Twitter, Edit, RefreshCw, Copy, Trash2, Plus, ChevronDown, Check } from 'lucide-react';
 
@@ -33,10 +33,33 @@ const PostEditor = () => {
     image: false,
     post: false,
   });
+  const [applyToAllPlatforms, setApplyToAllPlatforms] = useState(false);
   const [isAddPlatformsOpen, setIsAddPlatformsOpen] = useState(false);
   const [captionLoading, setCaptionLoading] = useState(false);
   const [hashtagsLoading, setHashtagsLoading] = useState(false);
   const [addPlatformsSelection, setAddPlatformsSelection] = useState({});
+  const [addPlatformsLoading, setAddPlatformsLoading] = useState(false);
+  const regenerateMenuContainerRef = useRef(null);
+  const addPlatformsContainerRef = useRef(null);
+
+  // When long-running ops are active, disable the rest of the UI actions
+  const uiDisabled = imageGenerating || addPlatformsLoading || captionLoading || hashtagsLoading;
+
+  // Close dropdowns when clicking anywhere on the screen (outside the menus)
+  useEffect(() => {
+    function handleDocClick(e) {
+      try {
+        const regNode = regenerateMenuContainerRef.current;
+        const addNode = addPlatformsContainerRef.current;
+        const clickedInsideReg = regNode && regNode.contains(e.target);
+        const clickedInsideAdd = addNode && addNode.contains(e.target);
+        if (!clickedInsideReg) setIsRegenerateMenuOpen(false);
+        if (!clickedInsideAdd) setIsAddPlatformsOpen(false);
+      } catch (_) {}
+    }
+    document.addEventListener('mousedown', handleDocClick);
+    return () => document.removeEventListener('mousedown', handleDocClick);
+  }, []);
 
 
   function handlerRegenerate() {
@@ -78,40 +101,65 @@ const PostEditor = () => {
 
       const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
       let updated = { ...generatedData, platforms: { ...generatedData.platforms } };
+      const allPlatformKeys = Object.keys(updated.platforms || {});
+      const targetPlatforms = applyToAllPlatforms ? allPlatformKeys : [activeTab];
 
-      // Caption regeneration for active platform
+      // Run selected operations concurrently
+      const promises = [];
+      let captionsResult = null;
       if (regenerateOptions.text) {
         setCaptionLoading(true);
-        const body = JSON.stringify({ postContent: generatedData.postContent, platforms: [activeTab] });
-        const res = await fetch(`${apiUrl}/regenerate-captions`, { method: 'POST', headers, body });
-        if (res.ok) {
-          const json = await res.json();
-          const newCaption = json?.platforms?.[activeTab]?.caption;
-          const newHashtagsFromCaption = json?.platforms?.[activeTab]?.hashtags;
-          if (!updated.platforms[activeTab]) updated.platforms[activeTab] = {};
-          if (newCaption) updated.platforms[activeTab].caption = newCaption;
-          // Only replace hashtags here if user didn't also explicitly choose hashtags
-          if (!regenerateOptions.hashtags && Array.isArray(newHashtagsFromCaption)) {
-            updated.platforms[activeTab].hashtags = newHashtagsFromCaption;
-          }
-        }
-        setCaptionLoading(false);
+        const body = JSON.stringify({ postContent: generatedData.postContent, platforms: targetPlatforms });
+        const p = fetch(`${apiUrl}/regenerate-captions`, { method: 'POST', headers, body })
+          .then(async (res) => (res.ok ? res.json() : null))
+          .then((json) => { captionsResult = json; })
+          .catch(() => {});
+        promises.push(p);
       }
 
-      // Hashtags regeneration for active platform
+      const hashtagResults = {};
       if (regenerateOptions.hashtags) {
         setHashtagsLoading(true);
-        const baseCaption = updated.platforms?.[activeTab]?.caption || generatedData.platforms?.[activeTab]?.caption || generatedData.postContent;
-        const body = JSON.stringify({ platforms: [activeTab], caption: baseCaption });
-        const res = await fetch(`${apiUrl}/regenerate-hashtags`, { method: 'POST', headers, body });
-        if (res.ok) {
-          const json = await res.json();
-          const newTags = json?.platforms?.[activeTab]?.hashtags;
-          if (!updated.platforms[activeTab]) updated.platforms[activeTab] = {};
-          if (Array.isArray(newTags)) updated.platforms[activeTab].hashtags = newTags;
+        for (const p of targetPlatforms) {
+          const baseCaption = (generatedData.platforms?.[p]?.caption || generatedData.postContent || '').toString();
+          const body = JSON.stringify({ platforms: [p], caption: baseCaption });
+          const hp = fetch(`${apiUrl}/regenerate-hashtags`, { method: 'POST', headers, body })
+            .then(async (res) => (res.ok ? res.json() : null))
+            .then((json) => { hashtagResults[p] = json?.platforms?.[p]?.hashtags || null; })
+            .catch(() => { hashtagResults[p] = null; });
+          promises.push(hp);
         }
-        setHashtagsLoading(false);
       }
+
+      // Wait for all selected operations to finish
+      if (promises.length) {
+        await Promise.all(promises);
+      }
+
+      // Apply captions result
+      if (captionsResult && captionsResult.platforms) {
+        for (const p of targetPlatforms) {
+          const newCaption = captionsResult?.platforms?.[p]?.caption;
+          const newHashtagsFromCaption = captionsResult?.platforms?.[p]?.hashtags;
+          if (!updated.platforms[p]) updated.platforms[p] = {};
+          if (newCaption) updated.platforms[p].caption = newCaption;
+          if (!regenerateOptions.hashtags && Array.isArray(newHashtagsFromCaption)) {
+            updated.platforms[p].hashtags = newHashtagsFromCaption;
+          }
+        }
+      }
+
+      // Apply hashtags results
+      if (regenerateOptions.hashtags) {
+        for (const p of targetPlatforms) {
+          const newTags = hashtagResults[p];
+          if (!updated.platforms[p]) updated.platforms[p] = {};
+          if (Array.isArray(newTags)) updated.platforms[p].hashtags = newTags;
+        }
+      }
+
+      setCaptionLoading(false);
+      setHashtagsLoading(false);
 
       // Image regeneration (shared image)
       if (regenerateOptions.image) {
@@ -396,15 +444,16 @@ const PostEditor = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-4">
           <h1 className="text-2xl font-bold text-gray-800 mb-2 sm:mb-0">Generated Post</h1>
           <div className="flex space-x-2 relative">
-            <button onClick={startEditing} className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200">
+            <button onClick={startEditing} disabled={uiDisabled} className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm ${uiDisabled ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               <Edit size={14} />
               <span>Edit Post</span>
             </button>
-            <div className="relative">
+            <div className="relative" ref={regenerateMenuContainerRef}>
               <button
                 type="button"
-                onClick={() => setIsRegenerateMenuOpen(v => !v)}
-                className="flex items-center space-x-2 px-3 py-1.5 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700"
+                onClick={() => !uiDisabled && setIsRegenerateMenuOpen(v => !v)}
+                disabled={uiDisabled}
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm ${uiDisabled ? 'bg-indigo-300 text-white cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
               >
                 <RefreshCw size={14} />
                 <span>Regenerate</span>
@@ -420,7 +469,7 @@ const PostEditor = () => {
                         checked={!!regenerateOptions.text}
                         onChange={() => toggleRegenerateOption('text')}
                         className="h-4 w-4"
-                        disabled={regenerateOptions.post}
+                        disabled={regenerateOptions.post || uiDisabled}
                       />
                       <span>Regenerate post text</span>
                     </label>
@@ -430,7 +479,7 @@ const PostEditor = () => {
                         checked={!!regenerateOptions.hashtags}
                         onChange={() => toggleRegenerateOption('hashtags')}
                         className="h-4 w-4"
-                        disabled={regenerateOptions.post}
+                        disabled={regenerateOptions.post || uiDisabled}
                       />
                       <span>Regenerate hashtags</span>
                     </label>
@@ -440,16 +489,27 @@ const PostEditor = () => {
                         checked={!!regenerateOptions.image}
                         onChange={() => toggleRegenerateOption('image')}
                         className="h-4 w-4"
-                        disabled={regenerateOptions.post}
+                        disabled={regenerateOptions.post || uiDisabled}
                       />
                       <span>Regenerate image</span>
                     </label>
+                    {/* <label className={`flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer`}>
+                      <input
+                        type="checkbox"
+                        checked={!!applyToAllPlatforms}
+                        onChange={() => setApplyToAllPlatforms(v => !v)}
+                        className="h-4 w-4"
+                        disabled={uiDisabled}
+                      />
+                      <span>Apply to all platforms</span>
+                    </label> */}
                     <label className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={!!regenerateOptions.post}
                         onChange={() => toggleRegenerateOption('post')}
                         className="h-4 w-4"
+                        disabled={uiDisabled}
                       />
                       <span>Regenerate post</span>
                     </label>
@@ -458,14 +518,16 @@ const PostEditor = () => {
                     <button
                       type="button"
                       onClick={() => setIsRegenerateMenuOpen(false)}
-                      className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-700 hover:bg-white"
+                      disabled={uiDisabled}
+                      className={`px-3 py-1.5 text-sm rounded-md border ${uiDisabled ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-700 hover:bg-white'}`}
                     >
                       Close
                     </button>
                     <button
                       type="button"
                       onClick={handleRegenerateSelected}
-                      className="px-3 py-1.5 text-sm rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                      disabled={uiDisabled}
+                      className={`px-3 py-1.5 text-sm rounded-md ${uiDisabled ? 'bg-indigo-300 cursor-not-allowed text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                     >
                       Regenerate 
                     </button>
@@ -486,8 +548,9 @@ const PostEditor = () => {
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setGeneratedData(prev => ({ ...prev, imageUrl: url }))}
-                      className={`px-2 py-1 text-xs rounded border ${generatedData.imageUrl === url ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                      onClick={() => !uiDisabled && setGeneratedData(prev => ({ ...prev, imageUrl: url }))}
+                      disabled={uiDisabled}
+                      className={`px-2 py-1 text-xs rounded border ${generatedData.imageUrl === url ? 'bg-indigo-600 text-white border-indigo-600' : uiDisabled ? 'bg-white text-gray-300 border-gray-100 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
                     >
                       {idx + 1}
                     </button>
@@ -520,11 +583,12 @@ const PostEditor = () => {
                 {platformNames.map(platform => (
                   <button
                     key={platform}
-                    onClick={() => setActiveTab(platform)}
+                    onClick={() => !uiDisabled && setActiveTab(platform)}
+                    disabled={uiDisabled}
                     className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium capitalize ${
                       activeTab === platform
                         ? 'border-indigo-500 text-indigo-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                        : uiDisabled ? 'border-transparent text-gray-300 cursor-not-allowed' : 'border-transparent text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     {platformIcons[platform]}
@@ -581,13 +645,13 @@ const PostEditor = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-3 mt-4">
-              <button type="button" className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">Post</button>
-              <button type="button" className="px-4 py-2 rounded-md bg-white text-indigo-700 border border-indigo-200 text-sm font-medium hover:bg-indigo-50">Schedule Post</button>
+              <button type="button" disabled={uiDisabled} className={`px-4 py-2 rounded-md text-sm font-medium ${uiDisabled ? 'bg-indigo-300 text-white cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>Post</button>
+              <button type="button" disabled={uiDisabled} className={`px-4 py-2 rounded-md text-sm font-medium ${uiDisabled ? 'bg-white text-indigo-300 border border-indigo-100 cursor-not-allowed' : 'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50'}`}>Schedule Post</button>
               {isEditing && (
                 <button
                   type="button"
-                  disabled={!hasChanges || isSaving}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${!hasChanges || isSaving ? 'bg-emerald-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'} text-white`}
+                  disabled={!hasChanges || isSaving || uiDisabled}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${(!hasChanges || isSaving || uiDisabled) ? 'bg-emerald-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'} text-white`}
                   onClick={saveEdits}
                 >
                   {isSaving ? 'Saving...' : 'Save'}
@@ -614,11 +678,12 @@ const PostEditor = () => {
               <div className="text-gray-500">No platforms selected</div>
             )}
           </div>
-          <div className="relative mt-3">
+          <div className="relative mt-3" ref={addPlatformsContainerRef}>
             <button
               type="button"
-              onClick={() => setIsAddPlatformsOpen(v => !v)}
-              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-md text-sm hover:bg-indigo-100 border border-indigo-200"
+              onClick={() => !uiDisabled && setIsAddPlatformsOpen(v => !v)}
+              disabled={uiDisabled}
+              className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm border ${uiDisabled ? 'bg-indigo-50 text-indigo-300 border-indigo-100 cursor-not-allowed' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'}`}
             >
               Add platforms
               <ChevronDown size={14} />
@@ -647,13 +712,15 @@ const PostEditor = () => {
                   <button
                     type="button"
                     onClick={() => setIsAddPlatformsOpen(false)}
-                    className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-700 hover:bg-white"
+                    disabled={uiDisabled}
+                    className={`px-3 py-1.5 text-sm rounded-md border ${uiDisabled ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-700 hover:bg-white'}`}
                   >
                     Close
                   </button>
                   <button
                     type="button"
                     onClick={async () => {
+                      setAddPlatformsLoading(true);
                       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
                       const token = typeof window !== 'undefined' ? sessionStorage.getItem('authToken') : null;
                       const toAdd = Object.keys(addPlatformsSelection).filter(k => addPlatformsSelection[k] && !platformNames.includes(k));
@@ -677,10 +744,19 @@ const PostEditor = () => {
                       } catch (_) { /* ignore */ }
                       setIsAddPlatformsOpen(false);
                       setAddPlatformsSelection({});
+                      setAddPlatformsLoading(false);
                     }}
-                    className="px-3 py-1.5 text-sm rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                    disabled={uiDisabled || addPlatformsLoading}
+                    className={`px-3 py-1.5 text-sm rounded-md ${uiDisabled || addPlatformsLoading ? 'bg-indigo-300 text-white cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                   >
-                    Add
+                    {addPlatformsLoading ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
+                        Adding...
+                      </span>
+                    ) : (
+                      'Add'
+                    )}
                   </button>
                 </div>
               </div>
@@ -717,8 +793,8 @@ const PostEditor = () => {
               </button> */}
               <button
                 onClick={handleDelete}
-                disabled={isDeleting}
-                className={`w-full text-left flex items-center space-x-2 px-3 py-2 rounded-md ${isDeleting ? 'bg-red-100 text-red-300 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}
+                disabled={isDeleting || uiDisabled}
+                className={`w-full text-left flex items-center space-x-2 px-3 py-2 rounded-md ${isDeleting || uiDisabled ? 'bg-red-100 text-red-300 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}
               >
                 <Trash2 size={16} />
                 <span>{isDeleting ? 'Deleting...' : 'Delete Post'}</span>

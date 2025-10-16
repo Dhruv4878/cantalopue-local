@@ -89,19 +89,25 @@ export default function LoginForm() {
       try {
         const apiUrl =
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-        const res = await fetch(`${apiUrl}/profile/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) {
-          // ✅ Token valid — send to content/generate
-          router.replace("/content/generate");
-        } else {
-          // ❌ No profile found, send to business create
+        // Skip calling /profile/me if we already know profile is not filled
+        const knownHasProfile = sessionStorage.getItem("hasProfile");
+        if (knownHasProfile === "false") {
           router.replace("/businesses/create");
+        } else {
+          const res = await fetch(`${apiUrl}/profile/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            try { sessionStorage.setItem("hasProfile", "true"); } catch (_) {}
+            router.replace("/content/dashboard");
+          } else {
+            try { sessionStorage.setItem("hasProfile", "false"); } catch (_) {}
+            router.replace("/businesses/create");
+          }
         }
       } catch (err) {
         console.error("Auth check failed:", err);
+        try { sessionStorage.setItem("hasProfile", "false"); } catch (_) {}
         router.replace("/businesses/create");
       } finally {
         setIsLoading(false);
@@ -139,29 +145,46 @@ export default function LoginForm() {
           const normalizedEmail = (email || "").trim();
           if (normalizedEmail) sessionStorage.setItem("userEmail", normalizedEmail);
         } catch (_) {}
+        // Prefer using hasProfile from login response; if missing, fall back to /profile/me
         if (typeof data.hasProfile === "boolean") {
           sessionStorage.setItem("hasProfile", data.hasProfile ? "true" : "false");
-        }
-
-        if (data.hasProfile) {
-          const profileRes = await fetch(`${apiUrl}/profile/me`, {
-            headers: { Authorization: `Bearer ${data.token}` },
-          });
-          if (profileRes.ok) {
+          if (data.hasProfile === true) {
+            try {
+              const profileRes = await fetch(`${apiUrl}/profile/me`, {
+                headers: { Authorization: `Bearer ${data.token}` },
+              });
+              if (profileRes.ok) {
+                try {
+                  const profile = await profileRes.json();
+                  const email = (profile?.user?.email || "").trim();
+                  if (email) sessionStorage.setItem("userEmail", email);
+                } catch (_) {}
+              }
+            } catch (_) {}
+            router.push("/content/dashboard");
+          } else {
+            router.push("/businesses/create");
+          }
+        } else {
           try {
-            const profile = await profileRes.json();
-            console.log("profile", profile);
-            const email = (profile?.user?.email || "").trim();
-            if (email) sessionStorage.setItem("userEmail", email);
-          } catch (_) {
-            // ignore parse errors
-          }
-          router.push("/content/generate");
-          return;
-          }
+            const profileRes = await fetch(`${apiUrl}/profile/me`, {
+              headers: { Authorization: `Bearer ${data.token}` },
+            });
+            if (profileRes.ok) {
+              try { sessionStorage.setItem("hasProfile", "true"); } catch (_) {}
+              // cache email if present
+              try {
+                const profile = await profileRes.json();
+                const email = (profile?.user?.email || "").trim();
+                if (email) sessionStorage.setItem("userEmail", email);
+              } catch (_) {}
+              router.push("/content/dashboard");
+              return;
+            }
+          } catch (_) {}
+          try { sessionStorage.setItem("hasProfile", "false"); } catch (_) {}
+          router.push("/businesses/create");
         }
-        // No profile yet: send to onboarding
-        router.push("/businesses/create");
       }
     } catch (err) {
       setError(err.message);
@@ -206,28 +229,46 @@ export default function LoginForm() {
       if (data.token) {
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("flashMessage", "Signed in with Google");
+        // Prefer using hasProfile from login response; if missing, fall back to /profile/me
         if (typeof data.hasProfile === "boolean") {
           sessionStorage.setItem("hasProfile", data.hasProfile ? "true" : "false");
-        }
-
-        if (data.hasProfile) {
-          const profileRes = await fetch(`${apiUrl}/profile/me`, {
-            headers: { Authorization: `Bearer ${data.token}` },
-          });
-          if (profileRes.ok) {
+          if (data.hasProfile === true) {
             try {
-              const profile = await profileRes.json();
-              const email = (profile?.user?.email || "").trim();
-              if (email) sessionStorage.setItem("userEmail", email);
-            } catch (_) {
-              // ignore parse errors
-            }
-            router.push("/content/generate");
-            return;
+              const profileRes = await fetch(`${apiUrl}/profile/me`, {
+                headers: { Authorization: `Bearer ${data.token}` },
+              });
+              if (profileRes.ok) {
+                try {
+                  const profile = await profileRes.json();
+                  const email = (profile?.user?.email || "").trim();
+                  if (email) sessionStorage.setItem("userEmail", email);
+                } catch (_) {}
+              }
+            } catch (_) {}
+            router.push("/content/dashboard");
+          } else {
+            router.push("/businesses/create");
           }
+        } else {
+          try {
+            const profileRes = await fetch(`${apiUrl}/profile/me`, {
+              headers: { Authorization: `Bearer ${data.token}` },
+            });
+            if (profileRes.ok) {
+              try { sessionStorage.setItem("hasProfile", "true"); } catch (_) {}
+              // cache email if present
+              try {
+                const profile = await profileRes.json();
+                const email = (profile?.user?.email || "").trim();
+                if (email) sessionStorage.setItem("userEmail", email);
+              } catch (_) {}
+              router.push("/content/dashboard");
+              return;
+            }
+          } catch (_) {}
+          try { sessionStorage.setItem("hasProfile", "false"); } catch (_) {}
+          router.push("/businesses/create");
         }
-        // No profile yet: send to onboarding
-        router.push("/businesses/create");
       }
     } catch (error) {
       setError(error.message || "Failed to sign in with Google. Please try again.");
