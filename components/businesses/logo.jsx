@@ -27,6 +27,8 @@ export default function BusinessHeader(	) {
 
 				const token = sessionStorage.getItem("authToken");
 				if (!token) return;
+				const hasProfileFlag = sessionStorage.getItem("hasProfile") === "true";
+				if (!hasProfileFlag) return;
 				const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 				const res = await fetch(`${apiUrl}/profile/me`, {
 					headers: { Authorization: `Bearer ${token}` },

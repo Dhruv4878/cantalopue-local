@@ -60,6 +60,8 @@ const Dashboard = () => {
   useEffect(() => {
     const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null;
     if (!token) return;
+    const hasProfile = typeof window !== "undefined" && sessionStorage.getItem("hasProfile") === "true";
+    if (!hasProfile) return;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     (async () => {
       try {

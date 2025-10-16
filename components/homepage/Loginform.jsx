@@ -145,10 +145,12 @@ export default function LoginForm() {
           const normalizedEmail = (email || "").trim();
           if (normalizedEmail) sessionStorage.setItem("userEmail", normalizedEmail);
         } catch (_) {}
-        // Prefer using hasProfile from login response; if missing, fall back to /profile/me
-        if (typeof data.hasProfile === "boolean") {
-          sessionStorage.setItem("hasProfile", data.hasProfile ? "true" : "false");
-          if (data.hasProfile === true) {
+        // Prefer using hasProfile from login response; normalize truthy/falsey values
+        const rawFlag = (data && (data.hasProfile ?? data.hasflag ?? data.userHasProfile));
+        const hasProfileNorm = rawFlag === true || rawFlag === 1 || String(rawFlag).toLowerCase() === "true" || String(rawFlag) === "1";
+        if (rawFlag !== undefined) {
+          sessionStorage.setItem("hasProfile", hasProfileNorm ? "true" : "false");
+          if (hasProfileNorm) {
             try {
               const profileRes = await fetch(`${apiUrl}/profile/me`, {
                 headers: { Authorization: `Bearer ${data.token}` },
@@ -229,10 +231,12 @@ export default function LoginForm() {
       if (data.token) {
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("flashMessage", "Signed in with Google");
-        // Prefer using hasProfile from login response; if missing, fall back to /profile/me
-        if (typeof data.hasProfile === "boolean") {
-          sessionStorage.setItem("hasProfile", data.hasProfile ? "true" : "false");
-          if (data.hasProfile === true) {
+        // Prefer using hasProfile from login response; normalize truthy/falsey values
+        const rawFlag = (data && (data.hasProfile ?? data.hasflag ?? data.userHasProfile));
+        const hasProfileNorm = rawFlag === true || rawFlag === 1 || String(rawFlag).toLowerCase() === "true" || String(rawFlag) === "1";
+        if (rawFlag !== undefined) {
+          sessionStorage.setItem("hasProfile", hasProfileNorm ? "true" : "false");
+          if (hasProfileNorm) {
             try {
               const profileRes = await fetch(`${apiUrl}/profile/me`, {
                 headers: { Authorization: `Bearer ${data.token}` },

@@ -36,10 +36,15 @@ export default function SignupPage() {
   useEffect(() => {
     const token = sessionStorage.getItem('authToken');
     if (!token) return;
+    const hasProfile = sessionStorage.getItem('hasProfile') === 'true';
+    if (!hasProfile) {
+      window.location.replace('/businesses/create');
+      return;
+    }
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     fetch(`${apiUrl}/profile/me`, { headers: { Authorization: `Bearer ${token}` }})
       .then((res) => {
-        if (res.ok) window.location.replace('/content/generate');
+        if (res.ok) window.location.replace('/content/dashboard');
         else window.location.replace('/businesses/create');
       })
       .catch(() => window.location.replace('/businesses/create'));
