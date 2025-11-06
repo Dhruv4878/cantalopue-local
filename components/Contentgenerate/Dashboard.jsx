@@ -68,7 +68,7 @@ const Dashboard = () => {
   const openFacebookConnect = () => {
     const token = typeof window !== "undefined" ? sessionStorage.getItem("authToken") : null;
     if (!metaAppId || !token) return;
-    const redirectUri = encodeURIComponent("http://localhost:5000/api/social/facebook/callback");
+    const redirectUri = encodeURIComponent("https://post-generator-backend-five.vercel.app/api/social/facebook/callback");
     const scopes = encodeURIComponent("pages_show_list,pages_manage_posts,instagram_basic,instagram_content_publish");
     const url = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${redirectUri}&state=${token}&scope=${scopes}&auth_type=rerequest`;
     if (typeof window !== "undefined") window.location.href = url;
