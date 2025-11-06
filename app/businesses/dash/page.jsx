@@ -1,5 +1,6 @@
 import Dashboard from "@/components/Contentgenerate/Dashboard";
 import BusinessHeader from "@/components/businesses/logo";
+import { Suspense } from "react";
 
   export default function DashboardPage(  ) {
   
@@ -8,7 +9,9 @@ import BusinessHeader from "@/components/businesses/logo";
 
          <BusinessHeader />
            <div className="pt-20" />
-      <Dashboard />
+     <Suspense fallback={<div />}> 
+       <Dashboard />
+     </Suspense>
     </>
   );
 }
