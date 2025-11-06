@@ -1,3 +1,4 @@
+"use client";
 import Dashboard from "@/components/Contentgenerate/Dashboard";
 import BusinessHeader from "@/components/businesses/logo";
 
