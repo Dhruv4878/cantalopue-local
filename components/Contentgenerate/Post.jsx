@@ -37,6 +37,7 @@ const PostEditor = () => {
   const [isAddPlatformsOpen, setIsAddPlatformsOpen] = useState(false);
   const [captionLoading, setCaptionLoading] = useState(false);
   const [hashtagsLoading, setHashtagsLoading] = useState(false);
+  const [postToast, setPostToast] = useState('');
   const [addPlatformsSelection, setAddPlatformsSelection] = useState({});
   const [addPlatformsLoading, setAddPlatformsLoading] = useState(false);
   const regenerateMenuContainerRef = useRef(null);
@@ -222,6 +223,81 @@ const PostEditor = () => {
       // Close and reset menu selections (except post)
       setIsRegenerateMenuOpen(false);
       setRegenerateOptions({ text: false, hashtags: false, image: false, post: false });
+    }
+  };
+
+  const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
+
+  // Publish current post to the active platform
+  const handlePublishNow = async () => {
+    try {
+      if (!postId || !activeTab) return;
+      // Allow Facebook, Instagram, and LinkedIn
+      if (!['facebook', 'instagram', 'linkedin'].includes(activeTab)) {
+        setPostToast(`Posting to ${activeTab} is not supported yet.`);
+        return;
+      }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const token = typeof window !== 'undefined' ? sessionStorage.getItem('authToken') : null;
+      if (!token) { setError('Please login again.'); router.push('/login'); return; }
+      const resp = await fetch(`${apiUrl}/social/post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ postId, platform: activeTab })
+      });
+      if (!resp.ok) {
+        const txt = await resp.text();
+        throw new Error(`Failed to post to ${activeTab}: ${txt}`);
+      }
+      setPostToast(`Posted to ${activeTab} successfully`);
+      setTimeout(() => setPostToast(''), 3000);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || 'Failed to post');
+    }
+  };
+
+  // Publish to all connected platforms
+  const handlePublishAllConnected = async () => {
+    try {
+      if (!postId) return;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const token = typeof window !== 'undefined' ? sessionStorage.getItem('authToken') : null;
+      if (!token) { setError('Please login again.'); router.push('/login'); return; }
+
+      // Fetch connected platforms from profile
+      const prof = await fetch(`${apiUrl}/profile/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!prof.ok) throw new Error('Failed to read profile');
+      const profile = await prof.json();
+      const targets = [];
+      if (profile?.social?.facebook?.pageId && profile?.social?.facebook?.accessToken) targets.push('facebook');
+      if (profile?.social?.instagram?.igBusinessId && profile?.social?.instagram?.accessToken) targets.push('instagram');
+      if (profile?.social?.linkedin?.memberId && profile?.social?.linkedin?.accessToken) targets.push('linkedin');
+
+      if (!targets.length) {
+        setPostToast('No connected platforms found');
+        setTimeout(() => setPostToast(''), 2500);
+        return;
+      }
+
+      for (const p of targets) {
+        const resp = await fetch(`${apiUrl}/social/post`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ postId, platform: p })
+        });
+        if (!resp.ok) {
+          const txt = await resp.text();
+          console.error(`Failed to post to ${p}:`, txt);
+        }
+      }
+      setPostToast('Posted to all connected platforms');
+      setTimeout(() => setPostToast(''), 3000);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || 'Failed to post to all platforms');
+    } finally {
+      setIsPostMenuOpen(false);
     }
   };
   
@@ -644,8 +720,45 @@ const PostEditor = () => {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-3 mt-4">
-              <button type="button" disabled={uiDisabled} className={`px-4 py-2 rounded-md text-sm font-medium ${uiDisabled ? 'bg-indigo-300 text-white cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>Post</button>
+            <div className="flex flex-wrap items-center justify-end gap-3 mt-4 relative">
+              <button
+                type="button"
+                onClick={() => setIsPostMenuOpen(v => !v)}
+                disabled={uiDisabled}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${uiDisabled ? 'bg-indigo-300 text-white cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+              >
+                Post
+              </button>
+              {isPostMenuOpen && (
+                <div className="absolute right-0 top-10 z-20 w-56 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <div className="p-2 text-sm text-gray-700 font-medium border-b">Publish Options</div>
+                  <button
+                    type="button"
+                    onClick={handlePublishNow}
+                    disabled={uiDisabled}
+                    className={`w-full text-left px-3 py-2 text-sm ${uiDisabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-50 text-gray-700'}`}
+                  >
+                    Post to current platform ({activeTab || '—'})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePublishAllConnected}
+                    disabled={uiDisabled}
+                    className={`w-full text-left px-3 py-2 text-sm ${uiDisabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-50 text-gray-700'}`}
+                  >
+                    Post to all connected platforms
+                  </button>
+                  <div className="flex items-center justify-end gap-2 p-2 border-t bg-gray-50">
+                    <button
+                      type="button"
+                      onClick={() => setIsPostMenuOpen(false)}
+                      className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-700 hover:bg-white"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
               <button type="button" disabled={uiDisabled} className={`px-4 py-2 rounded-md text-sm font-medium ${uiDisabled ? 'bg-white text-indigo-300 border border-indigo-100 cursor-not-allowed' : 'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50'}`}>Schedule Post</button>
               {isEditing && (
                 <button
@@ -661,6 +774,9 @@ const PostEditor = () => {
           </div>
         </div>
       </div>
+      {postToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-sm px-4 py-2 rounded-md shadow">{postToast}</div>
+      )}
       {/* Sidebar */}
       <div className="w-full lg:w-80 space-y-6">
         {/* Selected Platforms */}

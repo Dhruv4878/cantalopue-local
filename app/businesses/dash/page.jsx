@@ -1,4 +1,4 @@
-import Dashboard from "@/components/businesses/Dashboard";
+import Dashboard from "@/components/Contentgenerate/Dashboard";
 import BusinessHeader from "@/components/businesses/logo";
 
   export default function DashboardPage(  ) {
