@@ -1,10 +1,10 @@
 import ReviewDetails from "@/components/businesses/2";
-import BusinessHeader from "@/components/businesses/logo";
+import Header from "@/components/homepage/Header";
 
 export default function CreateBusinessPage2() {
 	return (
 		<>
-			<BusinessHeader />
+			<Header />
 			<ReviewDetails />
 		</>
 	);

@@ -1,5 +1,7 @@
+// Pricing.jsx
 "use client";
 import React, { useState } from "react";
+import GradientButton from "../GradientButton";
 
 const CheckCircleIcon = ({ className = "w-5 h-5" }) => (
   <svg
@@ -16,66 +18,45 @@ const CheckCircleIcon = ({ className = "w-5 h-5" }) => (
   </svg>
 );
 
-const CheckIcon = () => (
-  <div className="flex items-center justify-center w-5 h-5">
-    <svg
-      className="w-5 h-5 text-green-500"
-      fill="currentColor"
-      viewBox="0 0 20 20"
-    >
-      <path
-        fillRule="evenodd"
-        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-        clipRule="evenodd"
-      />
-    </svg>
-  </div>
-);
-
-const XIcon = () => (
-  <div className="flex items-center justify-center w-5 h-5">
-    <svg
-      className="w-5 h-5 text-red-500"
-      fill="currentColor"
-      viewBox="0 0 20 20"
-    >
-      <path
-        fillRule="evenodd"
-        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-        clipRule="evenodd"
-      />
-    </svg>
-  </div>
-);
-
-
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
+
+  // Helper function to calculate annual price (17% off is approximately 0.83 multiplier)
+  const calculatePrice = (monthlyPrice) => {
+    return isAnnual ? Math.round(monthlyPrice * 0.83) : monthlyPrice;
+  };
+
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 py-24">
-        <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Simple, Transparent <span className="text-yellow-400">Pricing</span>
-          </h1>
-          <p className="text-xl text-blue-100 max-w-4xl mx-auto mb-12">
-            Start free and scale as you grow. Choose the plan that fits your
-            business needs. Upgrade or downgrade anytime with no commitments.
+    <section className="w-full bg-[#070616] py-20 sm:py-24  lg:py-32">
+      <div className="mx-auto w-[calc(100vw-40px)] max-w-7xl">
+        {/* Heading + Subline */}
+        <div className="text-center mb-16">
+          <p className="text-sm font-semibold uppercase tracking-[0.5em] text-white/60">
+            Pricing
+          </p>
+          <h2
+            className="mt-3 text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl"
+            style={{ fontFamily: '"Monument Extended", sans-serif' }}
+          >
+            Plans that <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-400">scale</span> with every campaign.
+          </h2>
+          <p className="mt-4 max-w-2xl mx-auto text-base text-white/75 sm:text-lg">
+            Start free, then choose a plan when you’re ready to scale your
+            content pipeline. Switch tiers or cancel anytime—no lock‑ins.
           </p>
 
           {/* Billing Toggle */}
-          <div className="flex items-center justify-center mb-8">
+          <div className="mt-10 flex items-center justify-center gap-3">
             <span
-              className={`mr-3 ${
-                !isAnnual ? "text-white font-semibold" : "text-blue-200"
+              className={`text-sm ${
+                !isAnnual ? "text-white font-semibold" : "text-white/50"
               }`}
             >
               Monthly
             </span>
             <button
               onClick={() => setIsAnnual(!isAnnual)}
-              className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="relative inline-flex h-6 w-11 items-center rounded-full bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#FCAC00]"
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -84,534 +65,178 @@ export default function Pricing() {
               />
             </button>
             <span
-              className={`ml-3 ${
-                isAnnual ? "text-white font-semibold" : "text-blue-200"
+              className={`text-sm ${
+                isAnnual ? "text-white font-semibold" : "text-white/50"
               }`}
             >
-              Annual <span className="text-green-300">(Save 17%)</span>
+              Annual{" "}
+              <span className="text-[#FFC56E] font-medium">(Save 17%)</span>
             </span>
-          </div>
-
-          {/* Guide Message */}
-          <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-4 max-w-4xl mx-auto mb-12">
-            <div className="flex items-center justify-center">
-              <CheckIcon />
-              <span className="ml-2 text-blue-100">
-                Choose your plan and we'll guide you through creating your
-                account and business setup.
-              </span>
-            </div>
           </div>
         </div>
-      </section>
 
-      {/* Comparison Table */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Compare Plans
-            </h2>
-            <p className="text-xl text-gray-600">
-              See what's included in each plan to find the perfect fit for your
-              business.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto pt-6">
-            <table className="w-full max-w-6xl mx-auto border-collapse">
-              <thead>
-                <tr className="border-b-2 border-gray-200">
-                  <th className="text-left py-6 px-6 font-semibold text-gray-900 w-1/4">
-                    Features
-                  </th>
-                  <th className="text-center py-6 px-6 font-semibold text-gray-900 w-1/6">
-                    Free
-                  </th>
-                  <th className="text-center py-6 px-6 font-semibold text-gray-900 w-1/6">
-                    Starter
-                  </th>
-                  <th className="text-center py-6 px-6 font-semibold text-gray-900 w-1/6 relative">
-                    <div className="pt-4">Professional</div>
-                    <span className="absolute -top-1 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1 rounded-full whitespace-nowrap z-10">
-                      Popular
-                    </span>
-                  </th>
-                  <th className="text-center py-6 px-6 font-semibold text-gray-900 w-1/6">
-                    Enterprise
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                <tr className="hover:bg-gray-50">
-                  <td className="py-5 px-6 font-medium text-gray-900">
-                    Monthly Price
-                  </td>
-                  <td className="py-5 px-6 text-center text-green-600 font-bold">
-                    Free
-                  </td>
-                  <td className="py-5 px-6 text-center font-bold">
-                    ₹{isAnnual ? "41" : "49"}
-                  </td>
-                  <td className="py-5 px-6 text-center font-bold">
-                    ₹{isAnnual ? "124" : "149"}
-                  </td>
-                  <td className="py-5 px-6 text-center font-bold">
-                    ₹{isAnnual ? "415" : "499"}
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="py-5 px-6 text-gray-700">
-                    AI-generated posts per month
-                  </td>
-                  <td className="py-5 px-6 text-center">4</td>
-                  <td className="py-5 px-6 text-center">30</td>
-                  <td className="py-5 px-6 text-center">200</td>
-                  <td className="py-5 px-6 text-center">Unlimited</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="py-5 px-6 text-gray-700">
-                    Social media accounts
-                  </td>
-                  <td className="py-5 px-6 text-center">1</td>
-                  <td className="py-5 px-6 text-center">3</td>
-                  <td className="py-5 px-6 text-center">5</td>
-                  <td className="py-5 px-6 text-center">Unlimited</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="py-5 px-6 text-gray-700">Team members</td>
-                  <td className="py-5 px-6 text-center">1</td>
-                  <td className="py-5 px-6 text-center">2</td>
-                  <td className="py-5 px-6 text-center">10</td>
-                  <td className="py-5 px-6 text-center">Unlimited</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="py-5 px-6 text-gray-700">
-                    Advanced analytics
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <XIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <CheckIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <CheckIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <CheckIcon />
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="py-5 px-6 text-gray-700">API access</td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <XIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <XIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <CheckIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <CheckIcon />
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="py-5 px-6 text-gray-700">Priority support</td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <XIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <XIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <CheckIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <CheckIcon />
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="py-5 px-6 text-gray-700">
-                    White-label options
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <XIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <XIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <XIcon />
-                    </div>
-                  </td>
-                  <td className="py-5 px-6">
-                    <div className="flex justify-center items-center h-6">
-                      <CheckIcon />
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Cards */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-6">
-          {/* Billing Toggle */}
-          <div className="flex items-center justify-center mb-12">
-            <span
-              className={`mr-3 ${
-                !isAnnual ? "text-gray-900 font-semibold" : "text-gray-500"
-              }`}
-            >
-              Monthly
-            </span>
-            <button
-              onClick={() => setIsAnnual(!isAnnual)}
-              className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isAnnual ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
-            <span
-              className={`ml-3 ${
-                isAnnual ? "text-gray-900 font-semibold" : "text-gray-500"
-              }`}
-            >
-              Annual <span className="text-green-600">(Save 17%)</span>
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {/* Free Plan */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Free</h3>
-                <p className="text-gray-600 mb-6">
-                  Perfect for individuals and small creators getting started
-                </p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">Free</span>
-                  <span className="text-gray-500 ml-2">Forever</span>
-                </div>
-                <button  className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
-                  Get Started Free
-                </button>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-4">
-                  What's included:
-                </h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      4 AI-generated posts per month
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      1 social media platform
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">Basic scheduling</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Community support
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Content templates library
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Starter Plan */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Starter
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Perfect for small businesses getting started
-                </p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">
-                    ₹{isAnnual ? "41" : "49"}
-                  </span>
-                  <span className="text-gray-500 ml-2">/month</span>
-                </div>
-                <button className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
-                  Get Started
-                </button>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-4">
-                  What's included:
-                </h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      30 AI-generated posts per month
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      3 social media platforms
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Advanced scheduling automation
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">Email support</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">2 team members</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Content templates library
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">Basic analytics</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Professional Plan */}
-            <div className="bg-blue-600 rounded-2xl p-8 shadow-xl border-2 border-blue-500 relative transform scale-105 mt-6">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-                <span className="bg-blue-500 text-white text-sm font-bold px-4 py-2 rounded-full whitespace-nowrap shadow-lg">
-                  MOST POPULAR
+        {/* Pricing Cards Grid - Using flex or grid to ensure the Professional card is visually distinct */}
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 items-end">
+          
+          {/* Free Card */}
+          <div className="flex flex-col rounded-[28px] border border-white/12 bg-[#0F0E24] p-8 shadow-[0px_20px_100px_rgba(0,0,0,0.45)] transition duration-300 hover:scale-[1.02] hover:border-white/20">
+            <div className="mb-8 text-left">
+              <h3 className="text-2xl font-semibold text-white">Free</h3>
+              <p className="mt-1 text-base text-white/65">
+                For solo creators testing AI workflows.
+              </p>
+              <div className="mt-6 flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-white">₹0</span>
+                <span className="text-sm text-white/60 uppercase tracking-[0.2em]">
+                  Forever
                 </span>
               </div>
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-white mb-2">
-                  Professional
-                </h3>
-                <p className="text-blue-100 mb-6">
-                  Ideal for growing businesses and agencies
-                </p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-white">
-                    ₹{isAnnual ? "124" : "149"}
-                  </span>
-                  <span className="text-blue-200 ml-2">/month</span>
-                </div>
-                <button className="w-full bg-white text-blue-600 py-3 px-6 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
-                  Get Started
-                </button>
-              </div>
-              <div>
-                <h4 className="font-semibold text-white mb-4">
-                  What's included:
-                </h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">
-                      200 AI-generated posts per month
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">
-                      5 social media platforms
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">
-                      Advanced scheduling & automation
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">Priority support</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">10 team members</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">
-                      Custom content templates
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">
-                      Advanced analytics & reporting
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">
-                      Multi-platform publishing
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">Content calendar</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-blue-100">
-                      Performance optimization
-                    </span>
-                  </li>
-                </ul>
-              </div>
             </div>
+            <ul className="mb-8 space-y-3 text-base text-white/75">
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                4 AI‑generated posts / month
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                1 connected social profile
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                Basic scheduling
+              </li>
+            </ul>
+            {/* Button Styling */}
+            <button className="mt-auto w-full inline-flex items-center justify-center rounded-full bg-white/10 px-6 py-3 text-base font-semibold text-white hover:bg-white/20 transition duration-300">
+              Get started free
+            </button>
+          </div>
 
-            {/* Enterprise Plan */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Enterprise
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  For large organizations and agencies
-                </p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">
-                    ₹{isAnnual ? "415" : "499"}
-                  </span>
-                  <span className="text-gray-500 ml-2">/month</span>
-                </div>
-                <button className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
-                  Get Started
-                </button>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-4">
-                  What's included:
-                </h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Unlimited AI-generated posts
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Unlimited social media platforms
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Full automation suite
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      24/7 dedicated support
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Unlimited team members
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      White-label options
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Custom integrations
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">API access</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">
-                      Advanced security
-                    </span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">Custom reporting</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon />
-                    <span className="ml-3 text-gray-700">Account manager</span>
-                  </li>
-                </ul>
+          {/* Starter Card */}
+          <div className="flex flex-col rounded-[28px] border border-white/16 bg-[#141333] p-8 shadow-[0px_24px_110px_rgba(0,0,0,0.55)] transition duration-300 hover:scale-[1.02] hover:border-white/20">
+            <div className="mb-8 text-left">
+              <p className="mb-2 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#FFC56E]">
+                Best for solo brands
+              </p>
+              <h3 className="text-2xl font-semibold text-white">Starter</h3>
+              <p className="mt-1 text-base text-white/70">
+                Schedule and ship content consistently on 3 platforms.
+              </p>
+              <div className="mt-6 flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-white">
+                  ₹{calculatePrice(49)}
+                </span>
+                <span className="text-sm text-white/60">/month</span>
               </div>
             </div>
+            <ul className="mb-8 space-y-3 text-base text-white/80">
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                30 AI‑generated posts / month
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                3 social profiles
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                Advanced scheduling automation
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                Basic analytics & email support
+              </li>
+            </ul>
+            {/* Button Styling */}
+            <button className="mt-auto w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#FCAC00] to-[#FF6E00] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-orange-500/40 hover:shadow-orange-400/60 hover:brightness-110 transition duration-300 transform active:scale-[0.98]">
+              Choose Starter
+            </button>
+          </div>
+
+          {/* Professional Card - Enlarged and Highlighted */}
+          <div className="relative flex flex-col rounded-[28px] border border-[#FCAC00]/70 bg-[#201E4B] p-8 shadow-[0px_30px_130px_rgba(0,0,0,0.8)] ring-2 ring-[#FCAC00]/50 lg:scale-[1.08] transition duration-300 hover:scale-[1.1] hover:ring-[#FFC56E]/80">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#FCAC00] px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-black shadow-lg shadow-[#FCAC00]/50">
+              Most popular
+            </div>
+            <div className="mb-8 text-left pt-4">
+              <h3 className="text-2xl font-bold text-white">Professional</h3>
+              <p className="mt-1 text-base text-white/70">
+                For teams running always‑on, multi‑channel campaigns.
+              </p>
+              <div className="mt-6 flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-white">
+                  ₹{calculatePrice(149)}
+                </span>
+                <span className="text-sm text-white/60">/month</span>
+              </div>
+            </div>
+            <ul className="mb-8 space-y-3 text-base text-white/85">
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                200 AI‑generated posts / month
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                5 social profiles + calendar view
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                Advanced automation & performance insights
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                Priority support + 10 teammates
+              </li>
+              <li className="flex items-center gap-2 text-white/70">
+                <CheckCircleIcon className="w-5 h-5 text-purple-400" />
+                Dedicated content templates
+              </li>
+            </ul>
+            {/* Button Styling - High Contrast */}
+            <button className="mt-auto w-full inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-bold text-[#201E4B] shadow-lg shadow-white/40 hover:bg-[#FFEFD0] transition duration-300 transform active:scale-[0.98]">
+              Start Professional
+            </button>
+          </div>
+
+          {/* Enterprise Card */}
+          <div className="flex flex-col rounded-[28px] border border-white/16 bg-[#0F0E24] p-8 shadow-[0px_20px_100px_rgba(0,0,0,0.45)] transition duration-300 hover:scale-[1.02] hover:border-white/20">
+            <div className="mb-8 text-left">
+              <h3 className="text-2xl font-semibold text-white">Enterprise</h3>
+              <p className="mt-1 text-base text-white/70">
+                Custom workflows and support for large teams.
+              </p>
+              <div className="mt-6 flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-white">
+                  ₹{calculatePrice(499)}
+                </span>
+                <span className="text-sm text-white/60">/month</span>
+              </div>
+            </div>
+            <ul className="mb-8 space-y-3 text-base text-white/80">
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                Unlimited posts & social profiles
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                White‑label options & custom integrations
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                24/7 support + account manager
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircleIcon className="w-5 h-5 text-[#FFC56E]" />
+                Custom reporting & advanced security
+              </li>
+            </ul>
+            {/* Button Styling */}
+            <button className="mt-auto w-full inline-flex items-center justify-center rounded-full bg-white/10 px-6 py-3 text-base font-semibold text-white hover:bg-white/20 transition duration-300">
+              Start Enterprise
+            </button>
           </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

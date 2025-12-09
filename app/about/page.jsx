@@ -1,18 +1,23 @@
 "use client";
-import React, { useState } from 'react';
+import React from "react";
 import Header from "@/components/homepage/Header";
-import About from "@/components/homepage/About";
+import AboutUs from "@/components/homepage/AboutUs";
+import KeyFeaturesSection from "@/components/homepage/KeyFeaturesSection";
+import CallToActionSection from "@/components/homepage/CallToActionSection";
+import CantaloupeTitle from "@/components/homepage/BackgroundWatermark";
 import Footer from "@/components/homepage/Footer";
 
 export default function AboutPage() {
-	const [isMenuOpen, setIsMenuOpen] = useState(false);
-	return (
-		<div className="bg-gray-50 text-gray-800 font-sans antialiased">
-			<Header isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-			<main>
-				<About />
-			</main>
-			<Footer />
-		</div>
-	);
+  return (
+    <div className="min-h-screen flex flex-col bg-[#070616] text-white">
+      <Header />
+      <main className="space-y-8">
+        <AboutUs />
+        <KeyFeaturesSection />
+        <CallToActionSection />
+      </main>
+      <CantaloupeTitle />
+      <Footer />
+    </div>
+  );
 }

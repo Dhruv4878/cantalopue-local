@@ -89,7 +89,6 @@ export default function LoginForm() {
       try {
         const apiUrl =
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-        // Skip calling /profile/me if we already know profile is not filled
         const knownHasProfile = sessionStorage.getItem("hasProfile");
         if (knownHasProfile === "false") {
           router.replace("/businesses/create");
@@ -98,16 +97,22 @@ export default function LoginForm() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            try { sessionStorage.setItem("hasProfile", "true"); } catch (_) {}
-            router.replace("/content/dashboard");
+            try {
+              sessionStorage.setItem("hasProfile", "true");
+            } catch (_) {}
+            router.replace("/dashboard");
           } else {
-            try { sessionStorage.setItem("hasProfile", "false"); } catch (_) {}
+            try {
+              sessionStorage.setItem("hasProfile", "false");
+            } catch (_) {}
             router.replace("/businesses/create");
           }
         }
       } catch (err) {
         console.error("Auth check failed:", err);
-        try { sessionStorage.setItem("hasProfile", "false"); } catch (_) {}
+        try {
+          sessionStorage.setItem("hasProfile", "false");
+        } catch (_) {}
         router.replace("/businesses/create");
       } finally {
         setIsLoading(false);
@@ -140,51 +145,62 @@ export default function LoginForm() {
       if (data.token) {
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("flashMessage", "Signed in successfully");
-        // Ensure we persist email for initials fallback
         try {
           const normalizedEmail = (email || "").trim();
-          if (normalizedEmail) sessionStorage.setItem("userEmail", normalizedEmail);
+          if (normalizedEmail)
+            sessionStorage.setItem("userEmail", normalizedEmail);
         } catch (_) {}
-        // Prefer using hasProfile from login response; normalize truthy/falsey values
-        const rawFlag = (data && (data.hasProfile ?? data.hasflag ?? data.userHasProfile));
-        const hasProfileNorm = rawFlag === true || rawFlag === 1 || String(rawFlag).toLowerCase() === "true" || String(rawFlag) === "1";
+
+        const rawFlag =
+          data && (data.hasProfile ?? data.hasflag ?? data.userHasProfile);
+        const hasProfileNorm =
+          rawFlag === true ||
+          rawFlag === 1 ||
+          String(rawFlag).toLowerCase() === "true" ||
+          String(rawFlag) === "1";
+
+        const apiUrlBase =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+        // Always verify profile status by checking the profile endpoint
+        try {
+          const profileRes = await fetch(`${apiUrlBase}/profile/me`, {
+            headers: { Authorization: `Bearer ${data.token}` },
+          });
+          if (profileRes.ok) {
+            // User has a profile, check if onboarding is complete
+            try {
+              const profile = await profileRes.json();
+              const email = (profile?.user?.email || "").trim();
+              if (email) sessionStorage.setItem("userEmail", email);
+              
+              // Check if onboarding is complete
+              const onboardingComplete = profile?.onboardingComplete === true;
+              sessionStorage.setItem("hasProfile", onboardingComplete ? "true" : "false");
+              
+              if (onboardingComplete) {
+                router.push("/dashboard");
+              } else {
+                router.push("/businesses/create");
+              }
+              return;
+            } catch (_) {}
+          }
+        } catch (_) {}
+        
+        // Fallback: use the hasProfile flag from login response
         if (rawFlag !== undefined) {
           sessionStorage.setItem("hasProfile", hasProfileNorm ? "true" : "false");
           if (hasProfileNorm) {
-            try {
-              const profileRes = await fetch(`${apiUrl}/profile/me`, {
-                headers: { Authorization: `Bearer ${data.token}` },
-              });
-              if (profileRes.ok) {
-                try {
-                  const profile = await profileRes.json();
-                  const email = (profile?.user?.email || "").trim();
-                  if (email) sessionStorage.setItem("userEmail", email);
-                } catch (_) {}
-              }
-            } catch (_) {}
-            router.push("/content/dashboard");
+            router.push("/dashboard");
           } else {
             router.push("/businesses/create");
           }
         } else {
+          // Default: no profile found, redirect to onboarding
           try {
-            const profileRes = await fetch(`${apiUrl}/profile/me`, {
-              headers: { Authorization: `Bearer ${data.token}` },
-            });
-            if (profileRes.ok) {
-              try { sessionStorage.setItem("hasProfile", "true"); } catch (_) {}
-              // cache email if present
-              try {
-                const profile = await profileRes.json();
-                const email = (profile?.user?.email || "").trim();
-                if (email) sessionStorage.setItem("userEmail", email);
-              } catch (_) {}
-              router.push("/content/dashboard");
-              return;
-            }
+            sessionStorage.setItem("hasProfile", "false");
           } catch (_) {}
-          try { sessionStorage.setItem("hasProfile", "false"); } catch (_) {}
           router.push("/businesses/create");
         }
       }
@@ -204,14 +220,10 @@ export default function LoginForm() {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      // Persist basic identity for UI initials/email
       try {
-        const displayName = (user?.displayName || "").trim();
-        // no first/last stored
         if (user?.email) sessionStorage.setItem("userEmail", user.email);
-      } catch (_) {
-        // ignore
-      }
+      } catch (_) {}
+
       const idToken = await user.getIdToken();
 
       const apiUrl =
@@ -231,14 +243,23 @@ export default function LoginForm() {
       if (data.token) {
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("flashMessage", "Signed in with Google");
-        // Prefer using hasProfile from login response; normalize truthy/falsey values
-        const rawFlag = (data && (data.hasProfile ?? data.hasflag ?? data.userHasProfile));
-        const hasProfileNorm = rawFlag === true || rawFlag === 1 || String(rawFlag).toLowerCase() === "true" || String(rawFlag) === "1";
+
+        const rawFlag =
+          data && (data.hasProfile ?? data.hasflag ?? data.userHasProfile);
+        const hasProfileNorm =
+          rawFlag === true ||
+          rawFlag === 1 ||
+          String(rawFlag).toLowerCase() === "true" ||
+          String(rawFlag) === "1";
+
+        const apiUrlBase =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
         if (rawFlag !== undefined) {
           sessionStorage.setItem("hasProfile", hasProfileNorm ? "true" : "false");
           if (hasProfileNorm) {
             try {
-              const profileRes = await fetch(`${apiUrl}/profile/me`, {
+              const profileRes = await fetch(`${apiUrlBase}/profile/me`, {
                 headers: { Authorization: `Bearer ${data.token}` },
               });
               if (profileRes.ok) {
@@ -249,33 +270,38 @@ export default function LoginForm() {
                 } catch (_) {}
               }
             } catch (_) {}
-            router.push("/content/dashboard");
+            router.push("/dashboard");
           } else {
             router.push("/businesses/create");
           }
         } else {
           try {
-            const profileRes = await fetch(`${apiUrl}/profile/me`, {
+            const profileRes = await fetch(`${apiUrlBase}/profile/me`, {
               headers: { Authorization: `Bearer ${data.token}` },
             });
             if (profileRes.ok) {
-              try { sessionStorage.setItem("hasProfile", "true"); } catch (_) {}
-              // cache email if present
+              try {
+                sessionStorage.setItem("hasProfile", "true");
+              } catch (_) {}
               try {
                 const profile = await profileRes.json();
                 const email = (profile?.user?.email || "").trim();
                 if (email) sessionStorage.setItem("userEmail", email);
               } catch (_) {}
-              router.push("/content/dashboard");
+              router.push("/dashboard");
               return;
             }
           } catch (_) {}
-          try { sessionStorage.setItem("hasProfile", "false"); } catch (_) {}
+          try {
+            sessionStorage.setItem("hasProfile", "false");
+          } catch (_) {}
           router.push("/businesses/create");
         }
       }
     } catch (error) {
-      setError(error.message || "Failed to sign in with Google. Please try again.");
+      setError(
+        error.message || "Failed to sign in with Google. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -284,53 +310,73 @@ export default function LoginForm() {
   // ✅ Loading screen while checking login
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-[#050315] text-white">
         <div className="flex flex-col items-center space-y-4">
           <SpinnerIcon />
-          <p className="text-slate-600 font-medium">Checking your session...</p>
+          <p className="text-sm text-white/70">Checking your session...</p>
         </div>
       </div>
     );
   }
 
+  // ✅ Dark neon-style UI (aligned with signup)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-100 flex flex-col justify-center items-center p-6 font-sans">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">
-            Welcome Back 👋
-          </h1>
-          <p className="text-slate-500 mt-2">
-            Sign in to continue to your workspace
-          </p>
-        </div>
+    <div
+      className="
+        relative flex w-full
+        min-h-[620px] sm:min-h-[680px] lg:min-h-screen
+        items-center justify-center
+        overflow-hidden
+        px-4
+        py-10 sm:py-14 lg:py-0
+        text-white
+      "
+    >
+      {/* soft background glows */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-40 bottom-0 h-80 w-80 rounded-full  blur-[120px]" />
+        <div className="absolute -right-40 top-0 h-80 w-80 rounded-full  blur-[120px]" />
+      </div>
 
-        <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 hover:shadow-2xl transition-all duration-300">
+      {/* centered card */}
+      <div className="relative z-10 w-full max-w-md">
+        {/* gradient outer edge */}
+        <div className="pointer-events-none absolute -inset-[1px] rounded-[32px] bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 opacity-70" />
+        <div className="relative rounded-[30px] border border-white/10 bg-[#080819]/95 px-8 py-9 backdrop-blur-xl shadow-[0_0_55px_rgba(0,0,0,0.9)]">
+          {/* header inside card with space below (like signup) */}
+          <div className="mb-8 space-y-2 text-center">
+            <h1 className="text-[28px] sm:text-[30px] font-bold leading-tight text-[#ff4b26]">
+              Welcome Back
+            </h1>
+            <p className="text-sm sm:text-base text-white/65">
+              Sign in to continue to your workspace.
+            </p>
+          </div>
+
+          {/* CONTENT */}
           {view === "initial" && (
-            <div className="space-y-5">
+            <div className="space-y-5 text-sm">
               <button
                 onClick={handleSignInWithGoogle}
                 disabled={isLoading}
-                className="w-full bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl py-3.5 flex items-center justify-center hover:bg-slate-50 hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-[#101024] px-4 py-3 font-medium text-white hover:border-[#ff4b26]/70 hover:bg-[#151531] transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <GoogleIcon />
-                <span className="ml-3 text-sm sm:text-base">
-                  Sign in with Google
-                </span>
+                <span>Sign in with Google</span>
               </button>
 
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-3 text-slate-500">or</span>
-                </div>
+              <div className="flex items-center gap-3 text-xs text-white/40">
+                <span className="h-px flex-1 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                <span>OR</span>
+                <span className="h-px flex-1 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
               </div>
 
               <button
-                onClick={() => setView("email")}
-                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold rounded-xl py-3.5 hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-sm hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => {
+                  setView("email");
+                  setError(null);
+                }}
+                className="w-full rounded-xl bg-[#ff4b26] px-4 py-3 font-semibold text-white shadow-[0_0_30px_rgba(255,75,38,0.6)] hover:bg-[#ff5b36] active:scale-[0.99] transition"
               >
                 Sign in with Email
               </button>
@@ -338,11 +384,12 @@ export default function LoginForm() {
           )}
 
           {view === "email" && (
-            <form onSubmit={handleEmailLoginSubmit} className="space-y-6">
+            <form onSubmit={handleEmailLoginSubmit} className="space-y-5 text-sm">
+              {/* EMAIL */}
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-slate-700 mb-1"
+                  className="mb-1 block font-medium text-white/75"
                 >
                   Email Address
                 </label>
@@ -353,15 +400,16 @@ export default function LoginForm() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-slate-50 hover:bg-white"
+                  className="w-full rounded-lg border border-white/15 bg-[#101024] px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-[#ff4b26] focus:outline-none focus:ring-1 focus:ring-[#ff4b26]"
                   placeholder="you@example.com"
                 />
               </div>
 
+              {/* PASSWORD */}
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-slate-700 mb-1"
+                  className="mb-1 block font-medium text-white/75"
                 >
                   Password
                 </label>
@@ -372,49 +420,48 @@ export default function LoginForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-slate-50 hover:bg-white"
+                  className="w-full rounded-lg border border-white/15 bg-[#101024] px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-[#ff4b26] focus:outline-none focus:ring-1 focus:ring-[#ff4b26]"
                   placeholder="••••••••"
                 />
               </div>
 
+              {/* error */}
               {error && (
-                <p className="text-sm text-red-600 text-center bg-red-50 border border-red-200 rounded-lg py-2">
+                <p className="rounded-md bg-red-900/30 px-3 py-2 text-center text-xs text-red-300">
                   {error}
                 </p>
               )}
 
-              <div>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold rounded-xl py-3.5 flex items-center justify-center hover:from-indigo-700 hover:to-indigo-600 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                >
-                  {isLoading ? <SpinnerIcon /> : "Sign In"}
-                </button>
-              </div>
+              {/* submit */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="mt-1 flex w-full items-center justify-center rounded-xl bg-[#ff4b26] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_30px_rgba(255,75,38,0.6)] hover:bg-[#ff5b36] active:scale-[0.99] transition disabled:bg-gray-600 disabled:shadow-none disabled:cursor-not-allowed"
+              >
+                {isLoading ? <SpinnerIcon /> : "Sign In"}
+              </button>
 
-              <div className="text-center">
+              <div className="pt-1 text-center">
                 <button
                   type="button"
                   onClick={() => {
                     setView("initial");
                     setError(null);
                   }}
-                  className="text-sm text-indigo-600 hover:underline font-medium mt-3"
+                  className="text-xs font-medium text-[#ff4b26] hover:underline"
                 >
-                  &larr; Back to sign in options
+                  ← Back to sign in options
                 </button>
               </div>
             </form>
           )}
-        </div>
 
-        <div className="text-center mt-6">
-          <p className="text-sm text-slate-500">
+          {/* footer link */}
+          <p className="mt-6 text-center text-xs text-white/60">
             Don’t have an account?{" "}
             <a
               href="/signup"
-              className="font-semibold text-indigo-600 hover:underline"
+              className="font-semibold text-[#ff4b26] hover:underline"
             >
               Sign up for free
             </a>

@@ -1,18 +1,21 @@
 "use client";
-import React, { useState } from 'react';
+import React from "react";
 import Header from "@/components/homepage/Header";
 import Pricing from "@/components/homepage/Pricing";
+import Faq from "@/components/homepage/Faq";
+import CantaloupeTitle from "@/components/homepage/BackgroundWatermark";
 import Footer from "@/components/homepage/Footer";
 
 export default function PricingPage() {
-	const [isMenuOpen, setIsMenuOpen] = useState(false);
-	return (
-		<div className="bg-gray-50 text-gray-800 font-sans antialiased">
-			<Header isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-			<main>
-				<Pricing />
-			</main>
-			<Footer />
-		</div>
-	);
+  return (
+    <div className="min-h-screen flex flex-col bg-[#070616] text-white">
+      <Header />
+      <main className="space-y-8">
+        <Pricing />
+        <Faq />
+      </main>
+      <CantaloupeTitle />
+      <Footer />
+    </div>
+  );
 }

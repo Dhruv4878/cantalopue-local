@@ -1,11 +1,11 @@
 import CreateBusiness from "@/components/businesses/Create";
-import BusinessHeader from "@/components/businesses/logo";
+import Header from "@/components/homepage/Header";
 
 export default function CreateBusinessPage() {
 	return (
 		<>
-			<BusinessHeader />
-			<div className="pt-20">
+			<Header />
+			<div >
 				<CreateBusiness />
 			</div>
 		</>

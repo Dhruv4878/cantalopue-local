@@ -1,22 +1,29 @@
 'use client';
 import React from 'react';
 import Header from './Header';
-import Hero from './Hero'
-import Features from './Features';
-import CTA from './CTA';
+import Hero from './Hero';
 import Footer from './Footer';
-
-
+import KeyFeaturesSection from './KeyFeaturesSection';
+import SocialScrollBanner from './SocialScrollBanner';
+import CallToActionSection from './CallToActionSection';
+import CantaloupeTitle from './BackgroundWatermark';
+import ComingSoon from './ComingSoon';
+import Faq from './Faq';
 
 export default function App() {
   return (
-    <div className="bg-white text-gray-800 font-sans antialiased">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <main>
         <Hero />
-        <Features />
-        <CTA />
+        <KeyFeaturesSection />
+        <SocialScrollBanner />
+        <CallToActionSection />
+        <ComingSoon />
+        <Faq/>
+
       </main>
+      <CantaloupeTitle />
       <Footer />
     </div>
   );

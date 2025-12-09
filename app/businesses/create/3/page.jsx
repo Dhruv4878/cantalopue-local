@@ -1,12 +1,12 @@
-import BusinessHeader from '@/components/businesses/logo';
+import Header from '@/components/homepage/Header';
 import DefineBrandForm from '@/components/businesses/3';
 
 export default function CreateBusinessPage3() {
   return (
     <>
-      <BusinessHeader />
+      <Header />
 
-      <div className="pt-20">
+      <div>
         <DefineBrandForm />
       </div>
     </>
